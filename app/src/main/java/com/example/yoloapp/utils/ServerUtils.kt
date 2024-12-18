@@ -11,7 +11,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.File
 
-
 const val BASE_URL = "http://YOUR_IP_ADDRESS_HOST:5000"
 val client = OkHttpClient()
 
@@ -43,7 +42,7 @@ suspend fun sendImageForOCR(imagePath: String): String = withContext(Dispatchers
     }
 }
 
-suspend fun getGeneratedImageUrl(prompt: String): String = withContext(Dispatchers.IO) {
+suspend fun getGeneratedImageUrl(prompt: String, fireStoreManager: FireStoreManager): String = withContext(Dispatchers.IO) {
     val url = "$BASE_URL/generate_image"
     val jsonObject = JSONObject().apply {
         put("prompt", prompt)
@@ -59,7 +58,18 @@ suspend fun getGeneratedImageUrl(prompt: String): String = withContext(Dispatche
         if (response.isSuccessful) {
             val responseBody = response.body?.string()
             val json = responseBody?.let { JSONObject(it) }
-            json?.optString("image_url") ?: "Error: Image generation failed"
+            val imageUrl = json?.optString("image_url")
+
+            if (!imageUrl.isNullOrEmpty() && imageUrl.startsWith("http")) {
+                val uploadResult = fireStoreManager.uploadGeneratedImageToStorage(imageUrl)
+                if (uploadResult.isSuccess) {
+                    uploadResult.getOrNull() ?: "Error: Unable to retrieve uploaded image URL"
+                } else {
+                    "Error: ${uploadResult.exceptionOrNull()?.localizedMessage}"
+                }
+            } else {
+                "Error: Image generation failed or returned an invalid URL"
+            }
         } else {
             "Error: Server responded with code ${response.code}"
         }
@@ -67,4 +77,3 @@ suspend fun getGeneratedImageUrl(prompt: String): String = withContext(Dispatche
         "Error: ${e.cause ?: "Unknown error"}"
     }
 }
-

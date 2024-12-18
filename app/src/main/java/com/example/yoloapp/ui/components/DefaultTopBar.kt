@@ -14,7 +14,9 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AddBox
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowLeft
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +40,7 @@ import com.example.yoloapp.utils.currentRoute
 @Composable
 fun DefaultTopBar(
     navController: NavHostController,
+    drawerState: DrawerState,
     isBottomBarVisible: Boolean,
     onHiderClick: () -> Unit,
     onLogoutClick: () -> Unit,
@@ -53,10 +56,16 @@ fun DefaultTopBar(
                 if (actualRoute.startsWith("generatorScreen")) {
 
                     IconButton(onClick = { onMenuClick() }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = null,
-                        )
+                        if (drawerState.isClosed)
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = null,
+                            )
+                        else
+                            Icon(
+                                imageVector = Icons.Default.KeyboardDoubleArrowLeft,
+                                contentDescription = null,
+                            )
                         Spacer(modifier = Modifier.width(10.dp))
                     }
 

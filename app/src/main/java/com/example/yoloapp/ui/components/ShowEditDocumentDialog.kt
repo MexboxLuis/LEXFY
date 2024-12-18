@@ -36,7 +36,7 @@ import com.example.yoloapp.utils.updateDocumentText
 import kotlinx.coroutines.launch
 
 @Composable
-fun ShowEditDialog(
+fun ShowEditDocumentDialog(
     document: DocumentData,
     firestoreManager: FireStoreManager,
     onDocumentUpdated: (DocumentData) -> Unit,

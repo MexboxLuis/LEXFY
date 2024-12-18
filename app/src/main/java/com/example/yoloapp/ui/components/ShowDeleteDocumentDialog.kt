@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 
 @Composable
-fun ShowDeleteDialog(
+fun ShowDeleteDocumentDialog(
     onConfirmDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -52,6 +53,11 @@ fun ShowDeleteDialog(
                     OutlinedButton(
                         onClick = onDismiss
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Cancel,
+                            contentDescription = null,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "Cancel")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -60,8 +66,7 @@ fun ShowDeleteDialog(
                             onConfirmDelete()
                             onDismiss()
                         },
-
-                        ) {
+                    ) {
                         Icon(
                             imageVector = Icons.Default.DeleteForever,
                             contentDescription = null,

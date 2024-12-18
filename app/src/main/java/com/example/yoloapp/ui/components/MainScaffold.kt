@@ -40,35 +40,37 @@ fun MainScaffold(
     val groupedChats =
         remember { mutableStateOf<List<Pair<String, List<Pair<String, ChatData>>>>>(emptyList()) }
 
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             LaunchedEffect(email) {
                 if (email != null) {
-                    val chats = fireStoreManager.getChats(email)
-                    val now = Timestamp.now().toDate().time
+                    fireStoreManager.getChats(email) { chats ->
+                        val now = Timestamp.now().toDate().time
 
-                    val categorizedChats = chats.groupBy { (_, chat) ->
-                        val lastModifiedTime = chat.lastModifiedAt.toDate().time
-                        val hoursDifference = (now - lastModifiedTime) / (1000 * 60 * 60)
+                        val categorizedChats = chats.groupBy { (_, chat) ->
+                            val lastModifiedTime = chat.lastModifiedAt.toDate().time
+                            val hoursDifference = (now - lastModifiedTime) / (1000 * 60 * 60)
 
-                        when {
-                            hoursDifference < 24 -> "Today"
-                            hoursDifference in 24..48 -> "Yesterday"
-                            hoursDifference in 48..168 -> "Last 7 Days"
-                            else -> "Time Ago"
+                            when {
+                                hoursDifference < 24 -> "Today"
+                                hoursDifference in 24..48 -> "Yesterday"
+                                hoursDifference in 48..168 -> "Last 7 Days"
+                                else -> "Time Ago"
+                            }
                         }
-                    }
 
-                    val categoryOrder = listOf("Today", "Yesterday", "Last 7 Days", "Time Ago")
-                    groupedChats.value = categoryOrder.mapNotNull { category ->
-                        categorizedChats[category]?.let { category to it }
+                        val categoryOrder = listOf("Today", "Yesterday", "Last 7 Days", "Time Ago")
+                        groupedChats.value = categoryOrder.mapNotNull { category ->
+                            categorizedChats[category]?.let { category to it }
+                        }
                     }
                 }
             }
 
-
             ChatListDrawer(
+                fireStoreManager = fireStoreManager,
                 groupedChats = groupedChats.value,
                 email = email,
                 currentRoute = actualRoute,
@@ -91,14 +93,12 @@ fun MainScaffold(
                 topBar = {
                     DefaultTopBar(
                         navController = navController,
+                        drawerState = drawerState,
                         isBottomBarVisible = isBottomBarVisible,
                         onHiderClick = { isBottomBarVisible = !isBottomBarVisible },
                         onLogoutClick = { logoutAdvice = true },
                         onMenuClick = { scope.launch { drawerState.open() } },
-                        onCreateNewChatClick = {
-                            if (actualRoute != "generatorScreen")
-                                navController.navigate("generatorScreen")
-                        }
+                        onCreateNewChatClick = { navController.navigate("generatorScreen") }
                     )
                 },
                 bottomBar = {

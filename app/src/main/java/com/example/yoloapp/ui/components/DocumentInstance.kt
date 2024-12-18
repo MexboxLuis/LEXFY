@@ -136,7 +136,7 @@ fun DocumentInstance(
         }
 
         if (showEditDialog) {
-            ShowEditDialog(
+            ShowEditDocumentDialog(
                 document = document,
                 firestoreManager = firestoreManager,
                 onDocumentUpdated = onDocumentUpdated,
@@ -145,7 +145,7 @@ fun DocumentInstance(
         }
 
         if (showDeleteDialog) {
-            ShowDeleteDialog(
+            ShowDeleteDocumentDialog(
                 onConfirmDelete = {
                     coroutineScope.launch {
                         deleteDocument(document, firestoreManager, onDocumentDeleted)

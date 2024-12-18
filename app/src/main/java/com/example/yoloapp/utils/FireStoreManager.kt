@@ -7,8 +7,11 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.URL
 import java.util.Date
 import java.util.UUID
 
@@ -121,29 +124,46 @@ class FireStoreManager(
         }
     }
 
-
-    suspend fun getChats(email: String): List<Pair<String, ChatData>> {
-        val chatList = mutableListOf<Pair<String, ChatData>>()
+    suspend fun updateChatTitle(chatId: String, newTitle: String): Result<Unit> {
         return try {
-            val querySnapshot = firestore.collection("saved_chats")
-                .whereEqualTo("email", email)
-                .get()
-                .await()
 
-            for (document in querySnapshot.documents) {
-                try {
-                    val chatData = document.toObject(ChatData::class.java)
-                    if (chatData != null) {
-                        chatList.add(document.id to chatData)
-                    }
-                } catch (e: Exception) {
-                    continue
-                }
-            }
-            chatList
+            firestore.collection("saved_chats").document(chatId).update(
+                "title", newTitle,
+                "lastModifiedAt", Timestamp.now()
+            ).await()
+            Result.success(Unit)
         } catch (e: Exception) {
-            emptyList()
+            Result.failure(e)
         }
+    }
+
+    suspend fun deleteChat(chatId: String): Result<Unit> {
+        return try {
+            firestore.collection("saved_chats").document(chatId).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+
+    fun getChats(email: String, callback: (List<Pair<String, ChatData>>) -> Unit) {
+        firestore.collection("saved_chats")
+            .whereEqualTo("email", email)
+            .addSnapshotListener { querySnapshot, error ->
+                if (error != null) {
+                    callback(emptyList())
+                    return@addSnapshotListener
+                }
+
+                val chatList = querySnapshot?.documents?.mapNotNull { document ->
+                    val chatData = document.toObject(ChatData::class.java)
+                    chatData?.let { document.id to it }
+                } ?: emptyList()
+
+                callback(chatList)
+            }
     }
 
 
@@ -186,6 +206,46 @@ class FireStoreManager(
             "lastModifiedAt", Timestamp.now()
         ).await()
     }
+
+    suspend fun uploadGeneratedImageToStorage(imageUrl: String): Result<String> {
+        val userResult = authManager.getCurrentUser()
+
+        if (userResult.isFailure) {
+            return Result.failure(Exception("User not authenticated"))
+        }
+
+        val user = userResult.getOrNull()
+        val email = user?.email ?: return Result.failure(Exception("Failed to retrieve user email"))
+
+        return try {
+
+            if (!imageUrl.startsWith("http")) {
+                return Result.failure(Exception("Invalid image URL"))
+            }
+
+            // Download the image file from the URL
+            val tempFile = withContext(Dispatchers.IO) {
+                File.createTempFile("temp_image", ".jpg")
+            }
+            tempFile.outputStream().use { outputStream ->
+                URL(imageUrl).openStream().use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+            // Upload the image to Firebase Storage
+            val storageRef = storage.reference.child("$email/chat_images/${UUID.randomUUID()}.jpg")
+            val uploadTask = storageRef.putFile(tempFile.toUri()).await()
+            val downloadUrl = uploadTask.storage.downloadUrl.await().toString()
+
+            tempFile.delete()
+
+            Result.success(downloadUrl)
+        } catch (e: Exception) {
+            Result.failure(Exception("Failed to upload image: ${e.localizedMessage}"))
+        }
+    }
+
 
 
 }

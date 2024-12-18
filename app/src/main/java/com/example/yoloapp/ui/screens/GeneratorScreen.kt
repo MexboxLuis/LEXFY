@@ -1,5 +1,6 @@
 package com.example.yoloapp.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.TextFieldValue
@@ -69,12 +71,13 @@ fun GeneratorScreen(
     var isLoading by remember { mutableStateOf(false) }
     val email = authManager.getCurrentUser().getOrNull()?.email
     val focusRequester = remember { FocusRequester() }
+    var newChatId by remember { mutableStateOf<String?>(null) }
+    var isKeyboardOpen by remember { mutableStateOf(false) }
+
+    val view = LocalView.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
-    var isKeyboardOpen by remember { mutableStateOf(false) }
-    val view = LocalView.current
-
-
+    val context = LocalContext.current
 
     DisposableEffect(view) {
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
@@ -196,7 +199,7 @@ fun GeneratorScreen(
 
                             scope.launch {
                                 try {
-                                    val botResponse = getGeneratedImageUrl(userText)
+                                    val botResponse = getGeneratedImageUrl(userText, fireStoreManager)
                                     messages = messages.map { message ->
                                         if (message.id == botMessageId) {
                                             message.copy(text = botResponse)
@@ -204,8 +207,16 @@ fun GeneratorScreen(
                                             message
                                         }
                                     }
-                                    if (chatId != null) {
-                                        fireStoreManager.updateChatMessages(chatId, messages)
+                                    if (chatId != null || newChatId != null) {
+                                        if (chatId != null) {
+                                            fireStoreManager.updateChatMessages(chatId, messages)
+                                        }
+                                        if (newChatId != null) {
+                                            fireStoreManager.updateChatMessages(
+                                                newChatId!!,
+                                                messages
+                                            )
+                                        }
                                     } else {
                                         val newChat = ChatData(
                                             email = email ?: "",
@@ -214,7 +225,13 @@ fun GeneratorScreen(
                                             lastModifiedAt = Timestamp.now(),
                                             messages = messages
                                         )
-                                        fireStoreManager.saveChat(newChat)
+                                        val result = fireStoreManager.saveChat(newChat)
+                                        result.onSuccess { generatedNewChat ->
+                                            newChatId = generatedNewChat
+                                        }.onFailure { e ->
+                                            Toast.makeText(context, e.message, Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
 
                                     }
                                 } catch (e: Exception) {
