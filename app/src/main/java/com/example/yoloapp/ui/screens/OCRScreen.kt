@@ -28,9 +28,15 @@ import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +54,7 @@ import androidx.navigation.NavHostController
 import com.example.yoloapp.utils.RequestCameraPermission
 import com.example.yoloapp.utils.bindCameraUseCases
 import com.example.yoloapp.utils.rotateImageFileIfRequired
+import com.example.yoloapp.utils.sendImageForEasyOCR
 import com.example.yoloapp.utils.sendImageForOCR
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +64,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OCRScreen(navController: NavHostController) {
     val context = LocalContext.current
@@ -68,6 +76,9 @@ fun OCRScreen(navController: NavHostController) {
 
     var previewView: PreviewView? by remember { mutableStateOf(null) }
     var isLoading by remember { mutableStateOf(false) }
+    val modelOptions = listOf("GOT-OCR2_0", "EasyOCR")
+    var isExpanded by remember { mutableStateOf(false) }
+    var selectedOption by remember { mutableStateOf(modelOptions[0]) }
 
     val toggleCamera = {
         isBackCamera = !isBackCamera
@@ -100,7 +111,10 @@ fun OCRScreen(navController: NavHostController) {
                     CoroutineScope(Dispatchers.IO).launch {
 
                         val rotatedPhotoFile = rotateImageFileIfRequired(context, photoFile)
-                        val extractedText = sendImageForOCR(rotatedPhotoFile.absolutePath)
+                        val extractedText = when (selectedOption) {
+                            "EasyOCR" -> sendImageForEasyOCR(rotatedPhotoFile.absolutePath)
+                            else -> sendImageForOCR(rotatedPhotoFile.absolutePath)
+                        }
 
                         withContext(Dispatchers.Main) {
                             isLoading = false
@@ -141,7 +155,10 @@ fun OCRScreen(navController: NavHostController) {
             val rotatedPhotoFile = rotateImageFileIfRequired(context, photoFile)
 
             CoroutineScope(Dispatchers.IO).launch {
-                val extractedText = sendImageForOCR(rotatedPhotoFile.absolutePath)
+                val extractedText = when (selectedOption) {
+                    "EasyOCR" -> sendImageForEasyOCR(rotatedPhotoFile.absolutePath)
+                    else -> sendImageForOCR(rotatedPhotoFile.absolutePath)
+                }
 
                 withContext(Dispatchers.Main) {
                     isLoading = false
@@ -196,6 +213,51 @@ fun OCRScreen(navController: NavHostController) {
             },
             modifier = Modifier.fillMaxSize()
         )
+
+
+
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                ExposedDropdownMenuBox(
+                    expanded = isExpanded,
+                    onExpandedChange = { isExpanded = !isExpanded }
+                ) {
+                    TextField(
+                        modifier = Modifier.menuAnchor(),
+                        value = selectedOption,
+                        onValueChange = {
+
+                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
+                        readOnly = true
+                    )
+                    ExposedDropdownMenu(
+                        expanded = isExpanded,
+                        onDismissRequest = { isExpanded = false }
+                    ) {
+                        modelOptions.forEachIndexed { index, option ->
+                            DropdownMenuItem(
+                                text = { Text(text = option) },
+                                onClick = {
+                                    selectedOption = modelOptions[index]
+                                    isExpanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                            )
+                        }
+
+                    }
+                }
+            }
+        }
+
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
             Column(
@@ -323,11 +385,6 @@ fun OCRScreen(navController: NavHostController) {
         cameraProviderFuture.get()
     }
 }
-
-
-
-
-
 
 
 

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraEnhance
+import androidx.compose.material.icons.filled.DoubleArrow
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.AlertDialog
@@ -250,6 +251,29 @@ fun PhotoPreviewScreen(
                         shape = RoundedCornerShape(8.dp),
                     )
 
+            }
+            if (!isAnimationFinished) {
+                item {
+                    OutlinedButton(
+                        onClick = {
+                            isAnimationFinished = true
+                            animatedTextIndex = finalText.length
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.DoubleArrow, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Skip Animation")
+                        }
+
+                    }
+                }
             }
 
             item {

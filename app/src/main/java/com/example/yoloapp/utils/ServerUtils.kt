@@ -10,9 +10,14 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 const val BASE_URL = "http://YOUR_IP_ADDRESS_HOST:5000"
-val client = OkHttpClient()
+val client = OkHttpClient.Builder()
+    .connectTimeout(0, TimeUnit.SECONDS)
+    .readTimeout(0, TimeUnit.SECONDS)
+    .writeTimeout(0, TimeUnit.SECONDS)
+    .build()
 
 suspend fun sendImageForOCR(imagePath: String): String = withContext(Dispatchers.IO) {
     val url = "$BASE_URL/ocr"
@@ -75,5 +80,32 @@ suspend fun getGeneratedImageUrl(prompt: String, fireStoreManager: FireStoreMana
         }
     } catch (e: Exception) {
         "Error: ${e.cause ?: "Unknown error"}"
+    }
+}
+suspend fun sendImageForEasyOCR(imagePath: String): String = withContext(Dispatchers.IO) {
+    val url = "$BASE_URL/easyocr" // URL del endpoint de EasyOCR
+    val file = File(imagePath)
+
+    val requestBody = MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("image", file.name, file.asRequestBody("image/jpeg".toMediaTypeOrNull()))
+        .build()
+
+    val request = Request.Builder()
+        .url(url)
+        .post(requestBody)
+        .build()
+
+    try {
+        val response = client.newCall(request).execute()
+        if (response.isSuccessful) {
+            val responseBody = response.body?.string() ?: ""
+            val json = JSONObject(responseBody)
+            json.optString("text", "No text found")
+        } else {
+            "EasyOCR Failed: ${response.code}"
+        }
+    } catch (e: Exception) {
+        "Error: ${e.message ?: "Unknown error"}"
     }
 }

@@ -1,13 +1,16 @@
 package com.example.yoloapp.ui.components
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,20 +34,29 @@ fun DocumentDialog(
     val currentDocument = documentList[currentDocumentIndex]
 
     Dialog(onDismissRequest = onDismiss) {
+        val scrollState = rememberScrollState()
+
         Surface(
             shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .padding(16.dp)
+                .border(1.dp, MaterialTheme.colorScheme.primary)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(text = currentDocument.text)
-                Spacer(modifier = Modifier.height(8.dp))
+            Column {
+
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .heightIn(max = 150.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    Text(text = currentDocument.text)
+                }
+
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 ) {
                     TextButton(
                         onClick = {
