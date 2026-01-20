@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -108,9 +109,9 @@ fun ChatListDrawer(
 
                         IconButton(onClick = { showOptionsMenu = true }) {
                             Icon(
-                                imageVector = Icons.Default.Circle,
+                                imageVector = Icons.Default.MoreVert,
                                 contentDescription = null,
-                                modifier = Modifier.size(12.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }

@@ -12,7 +12,8 @@ import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-const val BASE_URL = "http://YOUR_IP_ADDRESS_HOST:5000"
+const val BASE_URL = "http://10.0.2.2:5000"
+
 val client = OkHttpClient.Builder()
     .connectTimeout(0, TimeUnit.SECONDS)
     .readTimeout(0, TimeUnit.SECONDS)
